@@ -216,7 +216,7 @@ footer{background:#081827;color:#fff;text-align:center;padding:35px;margin-top:4
       </div>
       <div class="auth-field">
         <label>Mobile Number</label>
-        <input id="authMobile" inputmode="numeric" maxlength="10" autocomplete="tel" placeholder="10 digit mobile number" required> <button type="button" onclick="sendDevKartOTP()" style="margin-top:6px;width:100%;padding:10px;border-radius:8px;border:0;cursor:pointer">Send OTP</button>
+        <input id="authMobile" inputmode="numeric" maxlength="10" autocomplete="tel" placeholder="10 digit mobile number" required>
       </div>
       <div class="auth-field" id="authEmailWrap">
         <label>Email (optional)</label>
@@ -352,58 +352,4 @@ function closeCheckout(){$('checkoutModal').classList.remove('show')}
 function placeOrder(){let chosen=document.querySelector('input[name="addr"]:checked');if(!chosen){alert('Delivery address चुनें।');return}let a=devUser.addresses[Number(chosen.value)],total=cart.reduce((t,x)=>t+products[x.i].p*x.q,0),order={id:'DK'+Date.now().toString().slice(-8),items:cart.map(x=>x.i),quantities:cart.map(x=>x.q),total,address:`${a.line}, ${a.city}, ${a.state} - ${a.pincode}`,status:'Placed',payment:'Cash on Delivery',date:new Date().toLocaleString('en-IN')};devUser.orders=devUser.orders||[];devUser.orders.push(order);syncUser();cart=[];saveCart();updateCart();closeCheckout();alert('Order successfully placed!\\nOrder ID: '+order.id+'\\nPayment: Cash on Delivery\\nTotal: ₹'+money(total));showOrders()}
 function openLogin(mode='login'){openAuth();if(!devUser)authMode(mode)}function closeLogin(){closeAuth()}function setMode(mode){authMode(mode)}function toggleAccount(){openAuth()}
 render();updateCart();updateWishlist();updateAccountUI();
-</script>
-<script>
-/* DevKart OTP layer
-   DEMO MODE: generates a 6-digit OTP in the browser and displays it on screen.
-   REAL SMS OTP requires a backend + SMS provider (e.g. Twilio/MSG91/Exotel).
-*/
-(function(){
-  let devOtp = null, devOtpMobile = null, devOtpExpires = 0;
-
-  function dkOtpMsg(t, ok){
-    const el=document.getElementById('authMsg');
-    if(el){ el.textContent=t; el.style.color=ok?'#067647':'#b42318'; }
-  }
-
-  window.sendDevKartOTP = function(){
-    const mobile=(document.getElementById('authMobile')?.value||'').trim();
-    if(!/^[6-9]\d{9}$/.test(mobile)){
-      dkOtpMsg('सही 10 digit Indian mobile number डालें।', false); return;
-    }
-    devOtpMobile=mobile;
-    devOtp=String(Math.floor(100000+Math.random()*900000));
-    devOtpExpires=Date.now()+5*60*1000;
-    let box=document.getElementById('devOtpBox');
-    if(!box){
-      box=document.createElement('div');
-      box.id='devOtpBox';
-      box.style.cssText='margin:12px 0;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc';
-      const form=document.getElementById('authForm');
-      if(form) form.appendChild(box);
-    }
-    box.innerHTML='<b>OTP Verification</b><br><small>Demo OTP (real SMS के लिए backend चाहिए):</small><div style="font-size:24px;font-weight:800;letter-spacing:5px;margin:7px 0">'+devOtp+'</div><input id="devOtpInput" inputmode="numeric" maxlength="6" placeholder="6 digit OTP" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px"><button type="button" class="primary" style="margin-top:8px;width:100%" onclick="verifyDevKartOTP()">Verify OTP</button>';
-    dkOtpMsg('OTP भेज दिया गया। Demo में ऊपर OTP दिख रहा है।', true);
-  };
-
-  window.verifyDevKartOTP = function(){
-    const code=(document.getElementById('devOtpInput')?.value||'').trim();
-    const mobile=(document.getElementById('authMobile')?.value||'').trim();
-    if(mobile!==devOtpMobile || !devOtp || Date.now()>devOtpExpires){
-      dkOtpMsg('OTP expire हो गया। नया OTP भेजें।', false); return;
-    }
-    if(code!==devOtp){
-      dkOtpMsg('OTP गलत है।', false); return;
-    }
-    sessionStorage.setItem('devkartOtpVerified', mobile);
-    dkOtpMsg('Mobile OTP verified successfully! अब account/login पूरा कर सकते हैं।', true);
-    devOtp=null;
-  };
-
-  window.devKartRequestRealOtp = function(){
-    alert('Real SMS OTP के लिए DevKart को backend/API से connect करना होगा। GitHub Pages अकेले SMS OTP नहीं भेज सकता।');
-  };
-})();
-</script>
-
-</body></html>
+</script></body></html>
