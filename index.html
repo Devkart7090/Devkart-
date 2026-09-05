@@ -13,7 +13,7 @@
 <div class="noticeModal" id="noticeModal"><div class="noticeBox"><div class="noticeIcon" id="noticeIcon">✓</div><h3 id="noticeTitle">Done</h3><p id="noticeText"></p><button class="cta" onclick="closeNotice()">OK</button></div></div><div class="bottom"><button onclick="scrollTo({top:0,behavior:'smooth'})"><span>⌂</span>Home</button><button onclick="document.getElementById('searchInput').focus()"><span>⌕</span>Search</button><button id="bottomProfileBtn" onclick="openProfile()"><span>♙</span><span id="bottomProfileLabel">Login</span></button><button onclick="openCart()"><span>🛒</span>Cart <b id="bc">0</b></button></div>
 <div class="modal" id="modal"><div class="box"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
 <script>
-const products=[
+let products=[
 {id:1,n:'Ashwagandha Powder',c:'Herbs',p:199,o:299,s:50,img:'ashwagandha.jpg',d:'Traditionally used for strength, stamina and overall wellness.'},
 {id:2,n:'Safed Musli Powder',c:'Herbs',p:249,o:349,s:40,img:'safed-musli.jpg',d:'Traditional Ayurvedic herb used for vitality and general wellness.'},
 {id:3,n:'Shatavari Powder',c:'Herbs',p:199,o:299,s:45,img:'shatavari.jpg',d:"Traditional herb used for women's wellness and nourishment."},
@@ -23,6 +23,8 @@ const products=[
 {id:7,n:'Cow Kanda',c:'Desi Cow & Havan',p:199,o:249,s:50,img:'cow-kanda.jpg',d:'Traditional cow dung cakes for puja and havan rituals.'},
 {id:8,n:'Havan Ki Lakdi',c:'Desi Cow & Havan',p:299,o:349,s:50,img:'havan-wood.jpg',d:'Natural wood prepared for traditional havan and puja rituals.'},
 {id:9,n:'Havan Samagri',c:'Desi Cow & Havan',p:149,o:199,s:50,img:'havan-samagri.jpg',d:'Traditional blend of havan ingredients for puja and yajna.'}];
+let adminSavedProducts=JSON.parse(localStorage.getItem('devkart_products')||'null');
+if(Array.isArray(adminSavedProducts)){ products=adminSavedProducts; }
 let cart=JSON.parse(localStorage.getItem('devkart_cart')||'[]'), logged=localStorage.getItem('devkart_logged')==='1';
 const $=s=>document.querySelector(s);function update(){let n=cart.length;$('#cartCount').textContent=n;$('#bc').textContent=n;$('#profileBtn').textContent=logged?'♙ My Profile':'♙ Login / Sign Up';let bl=$('#bottomProfileLabel');if(bl)bl.textContent=logged?'My Profile':'Login';localStorage.setItem('devkart_cart',JSON.stringify(cart))}function off(x){return Math.round((1-x.p/x.o)*100)}
 function card(p){let w=JSON.parse(localStorage.getItem('devkart_wishlist')||'[]');let liked=w.includes(p.id);return `<article class="card"><div onclick="openProduct(${p.id})" style="cursor:pointer"><img src="${p.img}" alt="${p.n}"><div class="body"><h3>${p.n}</h3><div class="stars">★★★★★ <span>(24)</span></div><div class="price">₹${p.p} <del>₹${p.o}</del> <span class="off">${off(p)}% OFF</span></div><div class="stock">✓ ${p.s}+ in stock</div></div></div><div class="body"><button class="pill" style="float:right;padding:5px 9px" onclick="toggleWish(${p.id})">${liked?'♥':'♡'}</button><button class="add" onclick="add(${p.id})">🛒 Add to Cart</button><div class="clear"></div></div></article>`}
@@ -67,4 +69,22 @@ function openAddress(){let saved=JSON.parse(localStorage.getItem('devkart_addres
 async function lookupPin(){let pin=$('#pin').value.trim();if(!/^\d{6}$/.test(pin)){showNotice('Invalid PIN','Please enter a valid 6 digit PIN code.','!');return}$('#pinStatus').textContent='Fetching PIN details...';try{let r=await fetch('https://api.postalpincode.in/pincode/'+pin);let d=await r.json();let po=d&&d[0]&&d[0].PostOffice&&d[0].PostOffice[0];if(!po){$('#pinStatus').textContent='PIN code not found.';return}$('#district').value=po.District||'';$('#state').value=po.State||'';$('#city').value=po.Block||po.Division||po.District||'';$('#pinStatus').textContent='PIN details found ✓'}catch(e){$('#pinStatus').textContent='PIN lookup unavailable. Please enter details manually.'}}
 function saveAddressAndCheckout(){let data={pin:$('#pin').value.trim(),city:$('#city').value.trim(),district:$('#district').value.trim(),state:$('#state').value.trim(),address:$('#fullAddress').value.trim(),mobile:$('#addressMobile').value.trim()};if(!/^\d{6}$/.test(data.pin)||!data.city||!data.state||!data.address||!/^[6-9]\d{9}$/.test(data.mobile)){showNotice('Address Incomplete','Please complete the address and enter a valid PIN/mobile number.','!');return}localStorage.setItem('devkart_address',JSON.stringify(data));let savedAddresses=getAddresses();let existing=savedAddresses.find(x=>x.pin===data.pin&&x.address===data.address&&x.mobile===data.mobile);if(existing){data.id=existing.id;data.label=existing.label||'Home';data.selected=true;savedAddresses=savedAddresses.map(x=>({...x,selected:x.id===data.id}));}else{data.id='A'+Date.now();data.label='Home';savedAddresses=savedAddresses.map(x=>({...x,selected:false}));data.selected=true;savedAddresses.push(data);}saveAddresses(savedAddresses);let orders=JSON.parse(localStorage.getItem('devkart_orders')||'[]');orders.push({id:'DK'+Date.now(),items:cart.map(x=>({...x})),total:cartTotal(),address:data,status:'Confirmed',payment:'Cash on Delivery',date:new Date().toLocaleString()});localStorage.setItem('devkart_orders',JSON.stringify(orders));cart=[];update();$('#modalContent').innerHTML=`<div style="text-align:center;padding:15px"><h2>Order Confirmed ✓</h2><p>Your order has been placed successfully.</p><p><b>Payment:</b> Cash on Delivery</p><p><b>Delivery PIN:</b> ${data.pin}</p><button class="cta full" onclick="closeModal()">Continue Shopping</button></div>`}
 update();render(products);
+
+/* Admin-controlled settings */
+(function(){
+  try{
+    const s=JSON.parse(localStorage.getItem('devkart_settings')||'{}');
+    if(s.storeName){
+      document.querySelectorAll('.brandtext b').forEach(el=>{ if(!el.querySelector('span')) el.textContent=s.storeName; });
+    }
+    if(s.support){
+      document.querySelectorAll('a[href*="8949257090"],a[href*="tel:"]').forEach(a=>{
+        if(a.textContent.toLowerCase().includes('support') || a.href.includes('8949257090')) {
+          a.href='tel:'+s.support;
+          a.textContent=a.textContent.replace(/8949257090/g,s.support);
+        }
+      });
+    }
+  }catch(e){}
+})();
 </script></body></html>
