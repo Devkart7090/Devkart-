@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DevKart Admin Control Panel</title>
+<style>
+:root{--g:#075d2c;--g2:#0b6a33;--gold:#bd6b08;--bg:#f5f7f3;--card:#fff;--line:#dfe6df;--text:#14231a;--muted:#66736b;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.top{background:var(--g);color:#fff;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:20}.brand{font-size:24px;font-weight:800}.brand span{color:#f3a33a}.logout{background:#fff;color:var(--g);border:0;border-radius:9px;padding:9px 15px;font-weight:700}
+.layout{display:flex;min-height:calc(100vh - 60px)}aside{width:240px;background:#fff;border-right:1px solid var(--line);padding:18px;position:sticky;top:60px;height:calc(100vh - 60px)}aside button{width:100%;text-align:left;border:0;background:#fff;padding:12px 14px;border-radius:9px;margin-bottom:5px;font-weight:700;color:#314138}aside button.active,aside button:hover{background:#eaf3ec;color:var(--g)}
+main{flex:1;padding:24px;max-width:1500px}.pageTitle{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.pageTitle h1{margin:0;font-size:28px}.btn{border:0;background:var(--g);color:#fff;padding:10px 15px;border-radius:8px;font-weight:700}.btn.secondary{background:#edf2ed;color:var(--g)}.btn.danger{background:#fff0ef;color:var(--red)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px}.stat .n{font-size:28px;font-weight:800;margin-top:8px}.muted{color:var(--muted)}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:18px;overflow:auto}table{width:100%;border-collapse:collapse;min-width:700px}th,td{padding:12px;border-bottom:1px solid #edf0ed;text-align:left;vertical-align:top}th{background:#f7f9f7}.badge{display:inline-block;padding:5px 9px;border-radius:20px;background:#eaf3ec;color:var(--g);font-size:12px;font-weight:700}.actions{display:flex;gap:7px;flex-wrap:wrap}.productGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.prod{border:1px solid var(--line);border-radius:12px;padding:12px}.prod img{width:100%;height:170px;object-fit:cover;border-radius:8px;background:#eee}.prod h3{margin:9px 0 5px}.price{font-weight:800;font-size:18px}.formGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field label{display:block;font-weight:700;margin-bottom:6px}.field input,.field select,.field textarea{width:100%;padding:10px;border:1px solid #ccd6ce;border-radius:8px}.field textarea{min-height:90px}.full{grid-column:1/-1}.empty{padding:30px;text-align:center;color:var(--muted)}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.modal.show{display:flex}.modalBox{background:#fff;border-radius:15px;width:min(680px,100%);max-height:90vh;overflow:auto;padding:22px}.modalHead{display:flex;justify-content:space-between;align-items:center}.x{border:0;background:#edf0ed;border-radius:50%;width:38px;height:38px;font-size:24px}.note{background:#fff8e8;border:1px solid #f0d7a0;padding:12px;border-radius:9px;margin:12px 0}
+@media(max-width:900px){aside{width:190px}.grid{grid-template-columns:repeat(2,1fr)}.productGrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.layout{display:block}aside{width:100%;height:auto;position:static;display:flex;overflow:auto;padding:8px}aside button{min-width:max-content;margin:0 4px}.grid,.productGrid,.formGrid{grid-template-columns:1fr}main{padding:14px}.pageTitle{gap:10px}.pageTitle h1{font-size:23px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand">Dev<span>Kart</span> <small>Admin Control Panel</small></div><button class="logout" onclick="goSite()">View Website</button></header>
+<div class="layout">
+<aside id="nav"></aside>
+<main id="app"></main>
+</div>
+<div class="modal" id="modal"><div class="modalBox" id="modalBox"></div></div>
+<script>
+const navItems=[
+['dashboard','📊 Dashboard'],['orders','📦 Orders'],['products','🛍️ Products'],['customers','👥 Customers'],['addresses','📍 Addresses'],['wishlist','♡ Wishlist'],['settings','⚙️ Website Settings']
+];
+let page='dashboard';
+const $=s=>document.querySelector(s);
+const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}};
+const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+function goSite(){location.href='index.html'}
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function products(){return read('devkart_products',null)||[
+{id:1,n:'Ashwagandha Powder',c:'Herbs',p:199,o:299,s:50,img:'ashwagandha.jpg',d:'Traditional Ayurvedic herb.'},
+{id:2,n:'Safed Musli Powder',c:'Herbs',p:249,o:349,s:40,img:'safed-musli.jpg',d:'Traditional herb.'},
+{id:3,n:'Shatavari Powder',c:'Herbs',p:199,o:299,s:45,img:'shatavari.jpg',d:'Traditional herb.'},
+{id:4,n:'Kaunch Beej Powder',c:'Herbs',p:199,o:299,s:35,img:'kaunch-beej.jpg',d:'Traditional seed powder.'},
+{id:5,n:'Gokhru Powder',c:'Herbs',p:149,o:199,s:30,img:'gokhru.jpg',d:'Traditional herb.'},
+{id:6,n:'Desi Cow Ghee',c:'Desi Cow & Havan',p:599,o:799,s:50,img:'cow-ghee.jpg',d:'Pure desi cow ghee.'},
+{id:7,n:'Cow Kanda',c:'Desi Cow & Havan',p:199,o:249,s:50,img:'cow-kanda.jpg',d:'Traditional cow dung cakes.'},
+{id:8,n:'Havan Ki Lakdi',c:'Desi Cow & Havan',p:299,o:349,s:50,img:'havan-wood.jpg',d:'Natural havan wood.'},
+{id:9,n:'Havan Samagri',c:'Desi Cow & Havan',p:149,o:199,s:50,img:'havan-samagri.jpg',d:'Traditional havan blend.'}];}
+function users(){return read('devkart_users',[])} function orders(){return read('devkart_orders',[])}
+function addresses(){return read('devkart_addresses',[])} function wishlist(){return read('devkart_wishlist',[])}
+function cart(){return read('devkart_cart',[])}
+function money(n){return '₹'+Number(n||0).toLocaleString('en-IN')}
+function nav(){ $('#nav').innerHTML=navItems.map(x=>`<button class="${page===x[0]?'active':''}" onclick="show('${x[0]}')">${x[1]}</button>`).join('') }
+function show(p){page=p;nav();({dashboard:dash,orders:ordersPage,products:productsPage,customers:customersPage,addresses:addressesPage,wishlist:wishlistPage,settings:settingsPage}[p])()}
+function dash(){
+ const os=orders(), us=users(), ps=products(), ws=wishlist();
+ const sales=os.reduce((a,o)=>a+Number(o.total||0),0);
+ $('#app').innerHTML=`<div class="pageTitle"><h1>Dashboard</h1><span class="muted">DevKart store overview</span></div>
+ <div class="grid">
+ <div class="stat"><div class="muted">Total Orders</div><div class="n">${os.length}</div></div>
+ <div class="stat"><div class="muted">Customers</div><div class="n">${us.length}</div></div>
+ <div class="stat"><div class="muted">Products</div><div class="n">${ps.length}</div></div>
+ <div class="stat"><div class="muted">Order Value</div><div class="n">${money(sales)}</div></div>
+ </div>
+ <div class="card"><h2>Recent Orders</h2>${os.length?`<table><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th></tr></thead><tbody>${os.slice().reverse().slice(0,8).map(o=>orderRow(o)).join('')}</tbody></table>`:'<div class="empty">No orders yet.</div>'}</div>
+ <div class="card"><h2>Store Snapshot</h2><p class="muted">Cart items currently on this browser: ${cart().reduce((a,x)=>a+Number(x.q||1),0)} · Wishlist items: ${ws.length}</p></div>`;
+}
+function customerForOrder(o){let m=o.address?.mob;return users().find(u=>u.m===m)||users().find(u=>u.m===o.mobile)||null}
+function orderRow(o){let u=customerForOrder(o);return `<tr><td><b>${esc(o.id)}</b></td><td>${esc(u?.name||o.address?.name||o.mobile||'Guest')}<br><span class="muted">${esc(u?.m||o.address?.mob||'')}</span></td><td>${money(o.total)}</td><td><span class="badge">${esc(o.status||'Confirmed')}</span></td><td>${esc(o.date||'')}</td></tr>`}
+function ordersPage(){
+ let os=orders();
+ $('#app').innerHTML=`<div class="pageTitle"><h1>Orders</h1><span class="muted">${os.length} total</span></div><div class="card">${os.length?`<table><thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Action</th></tr></thead><tbody>${os.slice().reverse().map((o,i)=>{let u=customerForOrder(o);return `<tr><td><b>${esc(o.id)}</b><br><small>${esc(o.date||'')}</small></td><td>${esc(u?.name||o.address?.name||'Customer')}<br>${esc(u?.m||o.address?.mob||'')}</td><td>${(o.items||[]).map(x=>{let p=products().find(p=>p.id===x.id);return `${esc(p?.n||x.n||'Product')} × ${x.q||1}`}).join('<br>')}</td><td><b>${money(o.total)}</b></td><td>${esc(o.payment||'Cash on Delivery')}</td><td><select onchange="statusOrder('${esc(o.id)}',this.value)">${['Pending','Confirmed','Shipped','Out for Delivery','Delivered','Cancelled'].map(s=>`<option ${o.status===s?'selected':''}>${s}</option>`).join('')}</select></td><td><button class="btn danger" onclick="deleteOrder('${esc(o.id)}')">Delete</button></td></tr>`}).join('')}</tbody></table>`:'<div class="empty">No orders yet.</div>'}</div>`;
+}
+function statusOrder(id,s){let os=orders();let o=os.find(x=>x.id===id);if(o){o.status=s;save('devkart_orders',os);show('orders')}}
+function deleteOrder(id){if(!confirm('Delete this order?'))return;save('devkart_orders',orders().filter(o=>o.id!==id));show('orders')}
+function productsPage(){
+ let ps=products();
+ $('#app').innerHTML=`<div class="pageTitle"><h1>Products</h1><button class="btn" onclick="productForm()">+ Add Product</button></div>
+ <div class="productGrid">${ps.map(p=>`<div class="prod"><img src="${esc(p.img)}" onerror="this.style.opacity='.25'"><h3>${esc(p.n)}</h3><div class="muted">${esc(p.c)}</div><div class="price">${money(p.p)} <del class="muted">${money(p.o)}</del></div><p class="muted">Stock: ${p.s}</p><div class="actions"><button class="btn secondary" onclick="productForm(${p.id})">Edit</button><button class="btn danger" onclick="deleteProduct(${p.id})">Delete</button></div></div>`).join('')}</div>`;
+}
+function productForm(id){
+ let p=products().find(x=>x.id===id)||{id:Date.now(),n:'',c:'Herbs',p:0,o:0,s:0,img:'ashwagandha.jpg',d:''};
+ $('#modalBox').innerHTML=`<div class="modalHead"><h2>${id?'Edit':'Add'} Product</h2><button class="x" onclick="closeM()">×</button></div>
+ <div class="formGrid"><div class="field"><label>Product Name</label><input id="pn" value="${esc(p.n)}"></div><div class="field"><label>Category</label><select id="pc"><option ${p.c==='Herbs'?'selected':''}>Herbs</option><option ${p.c==='Desi Cow & Havan'?'selected':''}>Desi Cow & Havan</option></select></div>
+ <div class="field"><label>Price</label><input id="pp" type="number" value="${p.p}"></div><div class="field"><label>MRP</label><input id="po" type="number" value="${p.o}"></div>
+ <div class="field"><label>Stock</label><input id="ps" type="number" value="${p.s}"></div><div class="field"><label>Image filename</label><input id="pi" value="${esc(p.img)}"><small class="muted">Use an image already in the ZIP, e.g. ashwagandha.jpg</small></div>
+ <div class="field full"><label>Description</label><textarea id="pd">${esc(p.d)}</textarea></div></div><br><button class="btn" onclick="saveProduct(${p.id})">Save Product</button>`;
+ $('#modal').classList.add('show');
+}
+function saveProduct(id){let ps=products();let p=ps.find(x=>x.id===id);let data={id,n:$('#pn').value.trim(),c:$('#pc').value,p:+$('#pp').value||0,o:+$('#po').value||0,s:+$('#ps').value||0,img:$('#pi').value.trim(),d:$('#pd').value.trim()};if(!data.n){alert('Enter product name');return}if(p)Object.assign(p,data);else ps.push(data);save('devkart_products',ps);closeM();show('products')}
+function deleteProduct(id){if(!confirm('Delete this product from the store?'))return;save('devkart_products',products().filter(p=>p.id!==id));show('products')}
+function customersPage(){let us=users();$('#app').innerHTML=`<div class="pageTitle"><h1>Customers</h1><span class="muted">${us.length} registered</span></div><div class="card">${us.length?`<table><thead><tr><th>Name</th><th>Mobile</th><th>Email</th><th>Password</th><th>Orders</th></tr></thead><tbody>${us.map(u=>`<tr><td>${esc(u.name||'-')}</td><td>${esc(u.m||'')}</td><td>${esc(u.e||'-')}</td><td>••••••</td><td>${orders().filter(o=>(o.address?.mob||'')===u.m).length}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No customers registered.</div>'}</div>`}
+function addressesPage(){let as=addresses();$('#app').innerHTML=`<div class="pageTitle"><h1>Addresses</h1><span class="muted">${as.length} saved</span></div><div class="card">${as.length?`<table><thead><tr><th>Customer</th><th>Address</th><th>PIN</th><th>City</th><th>State</th><th>Mobile</th><th>Selected</th></tr></thead><tbody>${as.map(a=>`<tr><td>${esc(a.name||'-')}</td><td>${esc(a.address||'')}</td><td>${esc(a.pin||'')}</td><td>${esc(a.city||'')}</td><td>${esc(a.state||'')}</td><td>${esc(a.mob||'')}</td><td>${a.selected?'Yes':''}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No addresses saved.</div>'}</div>`}
+function wishlistPage(){let ids=wishlist();let ps=products();$('#app').innerHTML=`<div class="pageTitle"><h1>Wishlist</h1><span class="muted">${ids.length} items</span></div><div class="card">${ids.length?ids.map(id=>{let p=ps.find(x=>x.id===id);return p?`<div style="display:flex;gap:15px;align-items:center;border-bottom:1px solid #eee;padding:12px"><img src="${esc(p.img)}" style="width:75px;height:60px;object-fit:cover;border-radius:7px"><div><b>${esc(p.n)}</b><div>${money(p.p)}</div></div></div>`:''}).join(''):'<div class="empty">No wishlist items.</div>'}</div>`}
+function settingsPage(){let s=read('devkart_settings',{});$('#app').innerHTML=`<div class="pageTitle"><h1>Website Settings</h1></div><div class="card"><div class="note">This control panel uses the same browser storage as the current GitHub Pages website. It is useful for your current demo setup. For secure multi-device admin access, a real backend/database is required.</div><div class="formGrid"><div class="field"><label>Store Name</label><input id="sn" value="${esc(s.storeName||'DevKart')}"></div><div class="field"><label>Customer Support Mobile</label><input id="ss" value="${esc(s.support||'8949257090')}"></div><div class="field full"><label>Admin Notes</label><textarea id="notes">${esc(s.notes||'')}</textarea></div></div><br><button class="btn" onclick="saveSettings()">Save Settings</button></div>`}
+function saveSettings(){save('devkart_settings',{storeName:$('#sn').value.trim(),support:$('#ss').value.replace(/\D/g,''),notes:$('#notes').value});alert('Settings saved. Refresh the main website to apply them.');}
+function closeM(){$('#modal').classList.remove('show')}
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeM()});
+show('dashboard');
+</script>
+</body>
+</html>
